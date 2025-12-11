@@ -89,7 +89,28 @@ function allowSendRate(meta) {
 // ---------------------------
 // HTTP + Socket.IO Server
 // ---------------------------
-const httpServer = http.createServer();
+// Minimal HTTP handler so cron/uptime pings can hit a health endpoint
+const httpServer = http.createServer((req, res) => {
+  const path = (req.url || "/").split("?")[0];
+
+  if (req.method === "GET" && (path === "/" || path === "/health" || path === "/healthz")) {
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(
+      JSON.stringify({
+        status: "ok",
+        uptime_seconds: process.uptime(),
+        timestamp: new Date().toISOString()
+      })
+    );
+    return;
+  }
+
+  // Let Socket.IO handle its own endpoint
+  if (path.startsWith("/socket.io")) return;
+
+  res.writeHead(404, { "Content-Type": "application/json" });
+  res.end(JSON.stringify({ error: "Not found" }));
+});
 const io = new Server(httpServer, {
   cors: { origin: "*" }
 });
