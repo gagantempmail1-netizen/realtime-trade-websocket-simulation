@@ -1,0 +1,21 @@
+{
+  "name": "realtime-stock-simulation",
+  "version": "1.0.0",
+  "main": "ws_ohlc_simulator.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon ws_ohlc_simulator.js",
+    "start": "node ws_ohlc_simulator.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "socket.io": "^4.8.1",
+    "ws": "^8.18.3"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.11"
+  }
+}
