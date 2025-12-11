@@ -93,7 +93,9 @@ function allowSendRate(meta) {
 const httpServer = http.createServer((req, res) => {
   const path = (req.url || "/").split("?")[0];
 
-  if (req.method === "GET" && (path === "/" || path === "/health" || path === "/healthz")) {
+  // Accept multiple friendly paths; include /cron-ping for Render health conflicts
+  const healthPaths = new Set(["/", "/health", "/healthz", "/cron-ping", "/alive"]);
+  if (req.method === "GET" && healthPaths.has(path)) {
     res.writeHead(200, { "Content-Type": "application/json" });
     res.end(
       JSON.stringify({
