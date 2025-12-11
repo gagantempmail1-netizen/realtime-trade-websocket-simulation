@@ -86,6 +86,26 @@ function allowSendRate(meta) {
   return true;
 }
 
+function formatQuote(state) {
+  const last = state.close_price;
+  const change = +(last - state.open_price).toFixed(4);
+  const changePct = state.open_price ? +((change / state.open_price) * 100).toFixed(4) : 0;
+
+  return {
+    symbol: state.symbol,
+    last,
+    open: state.open_price,
+    high: state.high_price,
+    low: state.low_price,
+    volume: state.volume,
+    day_change: change,
+    day_change_percent: changePct,
+    event_ts: state.ts,
+    currency: "USD",
+    source: "simulator"
+  };
+}
+
 // ---------------------------
 // HTTP + Socket.IO Server
 // ---------------------------
@@ -133,7 +153,7 @@ io.on("connection", (socket) => {
       symbols.filter(sym => instruments[sym]).forEach(sym => socket.meta.subs.add(sym));
     }
     // Send snapshot
-    const snapshot = Array.from(socket.meta.subs).map(sym => instruments[sym]);
+    const snapshot = Array.from(socket.meta.subs).map(sym => formatQuote(instruments[sym]));
     socket.emit("snapshot", snapshot);
   });
 
@@ -172,7 +192,7 @@ function startSimulation() {
     io.sockets.sockets.forEach((socket) => {
       if (!allowSendRate(socket.meta)) return;
       const relevant = updates.filter(u => socket.meta.subs.has(u.symbol));
-      relevant.forEach(u => socket.emit("update", u));
+      relevant.forEach(u => socket.emit("update", formatQuote(u)));
     });
 
     setTimeout(tick, BROADCAST_INTERVAL_MS);
