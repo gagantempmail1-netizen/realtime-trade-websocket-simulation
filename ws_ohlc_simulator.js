@@ -13,6 +13,7 @@ const { Server } = require("socket.io");
 const PORT = process.env.PORT || 8080;
 const BROADCAST_INTERVAL_MS = 800;
 const MAX_RATE_PER_SECOND = 50;
+const IST_OFFSET_MINUTES = 330; // UTC+5:30
 
 // ---------------------------
 // INSTRUMENTS BASE DATA
@@ -84,6 +85,18 @@ function allowSendRate(meta) {
   if (meta.sentInWindow >= MAX_RATE_PER_SECOND) return false;
   meta.sentInWindow++;
   return true;
+}
+
+function nowInIST() {
+  const now = new Date();
+  const utcMillis = now.getTime() + now.getTimezoneOffset() * 60000;
+  return new Date(utcMillis + IST_OFFSET_MINUTES * 60000);
+}
+
+function isMarketOpenIST() {
+  const ist = nowInIST();
+  const minutes = ist.getHours() * 60 + ist.getMinutes();
+  return minutes >= 10 * 60 && minutes < 19 * 60; // 10:00 to 18:59 IST
 }
 
 function formatQuote(state) {
@@ -179,6 +192,12 @@ io.on("connection", (socket) => {
 // ---------------------------
 function startSimulation() {
   function tick() {
+    // Only publish during market hours in IST
+    if (!isMarketOpenIST()) {
+      setTimeout(tick, 30000);
+      return;
+    }
+
     const symbols = Object.keys(instruments);
     const count = 3 + Math.floor(Math.random() * 4);
     const updateSymbols = new Set();
